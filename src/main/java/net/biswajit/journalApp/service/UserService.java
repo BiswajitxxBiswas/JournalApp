@@ -33,7 +33,13 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    public User findByUserName(String username){
-        return userRepository.findByUserName(username);
+    public User findByUserName(String username) {
+        try {
+            return userRepository.findByUserName(username);
+        } catch (Exception e) {
+            System.err.println("Error fetching user: " + e.getMessage());
+            return null;
+        }
     }
+
 }
