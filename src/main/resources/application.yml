@@ -9,3 +9,7 @@ server:
   port: ${PORT}
   servlet:
     context-path: /
+
+weather:
+  api:
+    key: ${WEATHER_API}
