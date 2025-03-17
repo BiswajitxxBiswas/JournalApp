@@ -1,15 +1,3 @@
 spring:
-  data:
-    mongodb:
-      uri: ${DB_URL}
-      database: journaldb
-      auto-index-creation: true
-
-server:
-  port: ${PORT}
-  servlet:
-    context-path: /
-
-weather:
-  api:
-    key: ${WEATHER_API}
+  profiles:
+    active: dev

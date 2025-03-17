@@ -1,0 +1,28 @@
+spring:
+  data:
+    mongodb:
+      uri: ${DB_URL}
+      database: ${DB_NAME}
+      auto-index-creation: true
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL}
+    password: ${APP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+
+server:
+  port: ${PORT}
+  servlet:
+    context-path: /
+
+weather:
+  api:
+    key: ${WEATHER_API}
