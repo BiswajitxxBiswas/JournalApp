@@ -1,5 +1,6 @@
 package net.biswajit.journalApp.scheduler;
 
+import lombok.extern.slf4j.Slf4j;
 import net.biswajit.journalApp.cache.AppCache;
 import net.biswajit.journalApp.entity.JournalEntry;
 import net.biswajit.journalApp.entity.User;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 public class UserScheduler {
     @Autowired
@@ -60,7 +62,12 @@ public class UserScheduler {
                         .sentiment("Sentiment for the last 7 days "+mostFreqSentiments)
                         .build();
 
-                kafkaTemplate.send("weekly-sentiments", sentimentData.getEmail(), sentimentData);
+                try {
+                    kafkaTemplate.send("weekly-sentiments", sentimentData.getEmail(), sentimentData);
+                }catch (Exception e){
+                    log.info("Issue in Kafka ",e);
+                    emailService.sendEmail(sentimentData.getEmail(), "Sentiment for previous week", sentimentData.getSentiment());
+                }
             }
         }
     }

@@ -6,14 +6,14 @@ spring:
         enabled: true
       database: ${DB_NAME}
       auto-index-creation: true
+    redis:
+      url: ${REDIS_URL}
 
-  redis:
-    url: ${REDIS_URL}
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${EMAIL}
-    password: ${APP_PASSWORD}
+    username: ${SMTP_EMAIL}
+    password: ${SMTP_APP_PASSWORD}
     properties:
       mail:
         smtp:
@@ -21,11 +21,12 @@ spring:
           starttls:
             enable: true
 
+
   kafka:
     bootstrap-servers: pkc-921jm.us-east-2.aws.confluent.cloud:9092
     properties:
       sasl.mechanism: PLAIN
-      sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username=${KAFKA_USERNAME} password=${KAFKA_PASSWORD};
+      sasl.jaas.config: org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_USERNAME}" password="${KAFKA_PASSWORD}";
       security.protocol: SASL_SSL
       session.timeout.ms: 45000
     producer:
@@ -37,10 +38,14 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        packages: net.biswajit.journalApp.model
+        spring:
+          json:
+            trusted:
+              packages: net.biswajit.journalApp.model
     admin:
       properties:
-        client.id: ${CLIENT_ID}
+        client.id: ${KAFKA_CLIENT_ID}
+
 
 server:
   port: ${PORT}
