@@ -50,3 +50,7 @@ server:
 weather:
   api:
     key: ${WEATHER_API}
+
+jwt:
+  secret:
+    key: ${JWT_SECRET_KEY}
