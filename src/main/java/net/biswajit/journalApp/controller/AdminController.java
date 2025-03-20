@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Controller for Admin functionalities such as fetching all users, creating an admin user, and clearing cache.
+ */
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
@@ -20,15 +23,23 @@ public class AdminController {
     @Autowired
     private AppCache appCache;
 
+    /**
+     * Fetches all registered users in the system.
+     *
+     */
     @GetMapping("/all-users")
     public ResponseEntity<?> getAllUsers(){
         List<User> list = userService.getAllUser();
         if(!list.isEmpty()){
             return new ResponseEntity<>(list, HttpStatus.OK);
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>("No users found.", HttpStatus.NOT_FOUND);
     }
 
+    /**
+     * Creates a new admin user.
+     *
+     */
     @PostMapping("/create-user-admin")
     public ResponseEntity<?> createUserAdmin(@RequestBody User user){
         try {
@@ -39,9 +50,18 @@ public class AdminController {
         }
     }
 
+    /**
+     * Clears the application cache.
+     * This helps in refreshing stored data.
+     */
     @GetMapping("/clear-cache")
-    public void clearCache(){
-        appCache.init();
+    public ResponseEntity<?> clearCache(){
+        try {
+            appCache.init();
+            return new ResponseEntity<>("Cache cleared successfully.", HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Failed to clear cache: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
 }

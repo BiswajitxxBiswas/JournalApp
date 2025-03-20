@@ -45,4 +45,27 @@ public class WeatherService {
             return body;
         }
     }
+
+    /**
+     * Capitalizes the first letter of each word in the city name
+     */
+    public String formatCityName(String city) {
+
+        if (city == null || city.isEmpty()) {
+            throw new IllegalArgumentException("City name cannot be empty");
+        }
+
+        String[] words = city.toLowerCase().split("\\s+");
+        StringBuilder formattedCity = new StringBuilder();
+
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                formattedCity.append(Character.toUpperCase(word.charAt(0)))
+                        .append(word.substring(1))
+                        .append(" ");
+            }
+        }
+
+        return formattedCity.toString().trim();
+    }
 }

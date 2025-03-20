@@ -1,5 +1,8 @@
 package net.biswajit.journalApp.service;
 
+import lombok.extern.slf4j.Slf4j;
+import net.biswajit.journalApp.dto.JournalEntryDTO;
+import net.biswajit.journalApp.dto.UserDTO;
 import net.biswajit.journalApp.entity.JournalEntry;
 import net.biswajit.journalApp.entity.User;
 import net.biswajit.journalApp.repository.JournalEntryRepository;
@@ -13,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class JournalEntryService {
 
     @Autowired
@@ -54,8 +58,23 @@ public class JournalEntryService {
                 return true;
             }
         }catch (Exception e){
-            throw new RuntimeException("An error occurred while deleting the entry "+e);
+            log.error("Error occurred while deleting entry {} ",e.getMessage(),e);
         }
         return false;
+    }
+
+    public JournalEntry convertToEntity(JournalEntryDTO journalEntryDTO) {
+        try {
+            JournalEntry journalEntry = new JournalEntry();
+
+            journalEntry.setTitle(journalEntryDTO.getTitle());
+            journalEntry.setContent(journalEntryDTO.getContent());
+            journalEntry.setSentiments(journalEntryDTO.getSentiments());
+
+            return journalEntry;
+        } catch (Exception e) {
+            log.error("Error occurred while converting JournalEntryDTO to JournalEntry: {}", e.getMessage(), e);
+            return null;
+        }
     }
 }

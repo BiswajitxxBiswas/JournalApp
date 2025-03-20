@@ -1,5 +1,6 @@
 package net.biswajit.journalApp.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import net.biswajit.journalApp.enums.Sentiments;
@@ -20,6 +21,11 @@ public class JournalEntry {
     private String content;
     private LocalDate date;
     private Sentiments sentiments;
+
+    @JsonProperty("id")
+    public String getIdAsString() {
+        return id.toHexString();
+    }
 
 
 }
