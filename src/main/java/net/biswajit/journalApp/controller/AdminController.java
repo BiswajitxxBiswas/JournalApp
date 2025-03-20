@@ -1,6 +1,7 @@
 package net.biswajit.journalApp.controller;
 
 import net.biswajit.journalApp.cache.AppCache;
+import net.biswajit.journalApp.dto.UserDTO;
 import net.biswajit.journalApp.entity.User;
 import net.biswajit.journalApp.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,8 +42,9 @@ public class AdminController {
      *
      */
     @PostMapping("/create-user-admin")
-    public ResponseEntity<?> createUserAdmin(@RequestBody User user){
+    public ResponseEntity<?> createUserAdmin(@RequestBody UserDTO userDTO){
         try {
+            User user = userService.convertToEntity(userDTO);
             userService.saveAdmin(user);
             return new ResponseEntity<>(user, HttpStatus.CREATED);
         }catch (Exception e){
