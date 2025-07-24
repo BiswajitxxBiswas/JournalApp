@@ -35,7 +35,7 @@ public class JournalEntryService {
     }
     public void saveEntry(JournalEntry newEntry){
         newEntry.setDate(LocalDate.now());
-        JournalEntry saved = journalEntryRepository.save(newEntry);
+        journalEntryRepository.save(newEntry);
     }
 
     public List<JournalEntry> getAllEntry(){
@@ -69,6 +69,7 @@ public class JournalEntryService {
 
             journalEntry.setTitle(journalEntryDTO.getTitle());
             journalEntry.setContent(journalEntryDTO.getContent());
+            journalEntry.setTags(journalEntryDTO.getTags());
             journalEntry.setSentiments(journalEntryDTO.getSentiments());
 
             return journalEntry;

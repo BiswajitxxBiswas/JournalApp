@@ -12,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +34,12 @@ public class UserService {
     public void saveNewUser(User user){
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRoles(List.of("USER"));
+        user.setDate(LocalDate.now());
         userRepository.save(user);
+    }
+
+    public void changePass(User user,String newPassword){
+        user.setPassword(passwordEncoder.encode(newPassword));
     }
 
     public void saveAdmin(User user){

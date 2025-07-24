@@ -15,11 +15,16 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  * Public API controller for handling user authentication and registration.
  */
 @RestController
+@CrossOrigin
 @RequestMapping("/public")
 @Slf4j
 public class PublicController {
@@ -46,7 +51,18 @@ public class PublicController {
             User user = userService.convertToEntity(userDTO);
             userService.saveNewUser(user);
 
-            return new ResponseEntity<>("User Registered Successfully", HttpStatus.OK);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(userDTO.getUserName());
+            String jwt = jwtUtil.generateToken(userDetails.getUsername());
+
+            Map<String,Object> response = new HashMap<>();
+            response.put("token",jwt);
+            response.put("user",Map.of(
+                    "userName", user.getUserName(),
+                    "email", user.getEmail()
+            ));
+            log.info("User data {}",response);
+
+            return  ResponseEntity.ok(response);
         }catch(Exception e){
             log.error("Error occurred while registering user {} ",e.getMessage(),e);
             return new ResponseEntity<>("Error registering user ", HttpStatus.INTERNAL_SERVER_ERROR);
@@ -68,7 +84,7 @@ public class PublicController {
             );
             UserDetails userDetails = userDetailsService.loadUserByUsername(userDTO.getUserName());
             String jwt = jwtUtil.generateToken(userDetails.getUsername());
-            return new ResponseEntity<>(jwt, HttpStatus.OK);
+            return  ResponseEntity.ok(Map.of("token",jwt));
         } catch (Exception e) {
             log.error("Exception occurred while creating JWT Token: {}", e.getMessage(), e);
             return new ResponseEntity<>("Incorrect Username or Password ", HttpStatus.BAD_REQUEST);

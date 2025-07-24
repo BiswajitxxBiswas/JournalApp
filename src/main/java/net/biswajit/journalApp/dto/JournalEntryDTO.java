@@ -1,5 +1,6 @@
 package net.biswajit.journalApp.dto;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,7 @@ public class JournalEntryDTO {
     private ObjectId id;
     private String title;
     private String content;
+    private List<String> tags;
     private LocalDate date;
     private Sentiments sentiments;
 

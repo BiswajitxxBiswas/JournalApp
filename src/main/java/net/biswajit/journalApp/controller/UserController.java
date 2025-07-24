@@ -2,6 +2,7 @@ package net.biswajit.journalApp.controller;
 
 
 import lombok.extern.slf4j.Slf4j;
+import net.biswajit.journalApp.dto.UpdateCredentialsDTO;
 import net.biswajit.journalApp.dto.UserDTO;
 import net.biswajit.journalApp.entity.JournalEntry;
 import net.biswajit.journalApp.entity.User;
@@ -22,6 +23,7 @@ import java.util.List;
 
 
 @RestController
+@CrossOrigin
 @RequestMapping("/users")
 @Slf4j
 public class UserController {
@@ -38,34 +40,69 @@ public class UserController {
     @Autowired
     private JournalEntryRepository journalEntryRepository;
 
+    /*
+    * Get User Details
+    * */
+    @GetMapping
+    public ResponseEntity<?> getUser(){
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String userName = authentication.getName();
+
+            User user = userRepository.findByUserName(userName);
+
+            if(user != null){
+                return new ResponseEntity<>(user,HttpStatus.OK);
+            }
+
+            return new ResponseEntity<>("Error Fetching User",HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
     /**
      * Update user details
      */
+    @Transactional
     @PutMapping("/update-user")
-    public ResponseEntity<?> updateUser(@RequestBody UserDTO userDTO){
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String userName = authentication.getName();
-
+    public ResponseEntity<?> updateUser(@RequestBody UpdateCredentialsDTO credentialsDTO) {
+        log.info("Credentials {}",credentialsDTO);
         try {
-            User userInDB = userService.findByUserName(userName);
 
-            if(userInDB != null){
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String currentUsername = authentication.getName();
+            log.info("Current User {}",currentUsername);
 
-                User updatedUser = userService.updateUserFromDTO(userInDB, userDTO);
-
-                if (updatedUser == null) {
-                    return new ResponseEntity<>("Error updating user details", HttpStatus.INTERNAL_SERVER_ERROR);
-                }
-                userService.saveNewUser(updatedUser);
-                return ResponseEntity.ok("User updated successfully");
+            User user = userService.findByUserName(currentUsername);
+            log.info("User in DB {}",user);
+            if (user == null) {
+                return new ResponseEntity<>("User not found", HttpStatus.UNAUTHORIZED);
             }
-            return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
-        }catch (Exception e) {
-            return new ResponseEntity<>("An error occurred while updating the user: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+
+            if (credentialsDTO.getUserName() != null && !credentialsDTO.getUserName().isBlank()) {
+                String newUserName = credentialsDTO.getUserName();
+
+                if (!newUserName.equals(currentUsername)) {
+                    User existingUser = userService.findByUserName(newUserName);
+                    if (existingUser != null) {
+                        return new ResponseEntity<>("User Name Already Exists", HttpStatus.CONFLICT);
+                    }
+                    user.setUserName(newUserName);
+                    userService.saveUser(user);
+                }
+            }
+
+            if (credentialsDTO.getPassword() != null && !credentialsDTO.getPassword().isBlank()) {
+                userService.changePass(user, credentialsDTO.getPassword());
+                userService.saveUser(user);
+            }
+
+            return ResponseEntity.ok("Credentials Updated");
+
+        }catch (Exception e){
+            return new ResponseEntity<>("Error Updating Credentials" + e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
     }
+
 
     /**
      * Delete the currently authenticated user

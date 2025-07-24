@@ -1,5 +1,6 @@
 package net.biswajit.journalApp.entity;
 
+import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +20,7 @@ public class JournalEntry {
     private ObjectId id;
     private String title;
     private String content;
+    private List<String> tags;
     private LocalDate date;
     private Sentiments sentiments;
 
