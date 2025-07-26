@@ -26,4 +26,17 @@ public class EmailService {
         }
     }
 
+    public void sendOtpEmail(String email, String userName, String otp, int validMinutes) {
+        String subject = "Your JournalApp OTP";
+        String body = "Hello " + userName + ",\n\n"
+                + "Your email verification OTP: " + otp
+                + "\nThis OTP expires in " + validMinutes + " minutes.";
+        // Prepare email (add content type, HTML support as needed)
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(email);
+        message.setSubject(subject);
+        message.setText(body);
+        javaMailSender.send(message);
+    }
+
 }

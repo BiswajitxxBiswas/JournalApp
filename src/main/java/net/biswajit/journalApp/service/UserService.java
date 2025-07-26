@@ -68,6 +68,16 @@ public class UserService {
             return null;
         }
     }
+    public User findByEmail(String email) {
+        try {
+            User user = userRepository.findByEmail(email);
+            log.info("Uer in Service {}",user);
+            return user;
+        } catch (Exception e) {
+            log.error("Error fetching user: ",e);
+            return null;
+        }
+    }
 
     public User updateUserFromDTO(User user, UserDTO userDTO) throws Exception {
         try {

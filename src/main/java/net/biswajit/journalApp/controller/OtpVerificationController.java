@@ -1,7 +1,7 @@
 package net.biswajit.journalApp.controller;
 
 import net.biswajit.journalApp.entity.User;
-import net.biswajit.journalApp.model.OtpVerification;
+import net.biswajit.journalApp.model.EmailOtp;
 import net.biswajit.journalApp.repository.OtpVerificationRepository;
 import net.biswajit.journalApp.repository.UserRepository;
 import net.biswajit.journalApp.service.UserService;
@@ -29,7 +29,7 @@ public class OtpVerificationController {
 
     @PostMapping("/verify-otp")
     public ResponseEntity<String> verifyOtp(@RequestParam String email, @RequestParam String otp) {
-        OtpVerification mail = otpRepo.findByEmail(email)
+        EmailOtp mail = otpRepo.findByEmail(email)
                 .orElse(null);
 
         if (mail == null) {
@@ -46,9 +46,8 @@ public class OtpVerificationController {
         }
 
 
-        Optional<User> userOptional = userRepo.findByEmail(email);
-        if(userOptional.isPresent()){
-            User user =  userOptional.get();
+        User user = userRepo.findByEmail(email);
+        if(user != null){
             user.setMailVerify(true);
             userService.saveUser(user);
         }
