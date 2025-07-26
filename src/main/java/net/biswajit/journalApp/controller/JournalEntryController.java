@@ -139,7 +139,7 @@ public class JournalEntryController {
                 entry.setTags(journalEntryDTO.getTags());
             }
 
-            journalEntryService.saveEntry(entry);
+            journalEntryService.updateEntry(entry);
             return ResponseEntity.ok("Journal entry updated successfully\n" + entry);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

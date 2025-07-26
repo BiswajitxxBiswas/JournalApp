@@ -68,3 +68,6 @@ weather:
 jwt:
   secret:
     key: ${JWT_SECRET_KEY}
+
+crypto:
+  masterKey: ${CRYPTO_B64_KEY}

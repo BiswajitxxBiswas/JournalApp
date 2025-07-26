@@ -22,5 +22,6 @@ public class UserDTO {
 
     private LocalDate date;
     private String email;
+    private boolean isVerified;
     private boolean sentimentAnalysis;
 }

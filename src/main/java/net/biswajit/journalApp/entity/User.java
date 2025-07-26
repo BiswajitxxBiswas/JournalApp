@@ -33,6 +33,8 @@ public class User {
     private String email;
     private LocalDate date;
 
+    private boolean isMailVerify;
+
     private boolean sentimentAnalysis;
 
     @DBRef

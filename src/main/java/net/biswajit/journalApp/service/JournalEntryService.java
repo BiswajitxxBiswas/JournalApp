@@ -37,6 +37,9 @@ public class JournalEntryService {
         newEntry.setDate(LocalDate.now());
         journalEntryRepository.save(newEntry);
     }
+    public void updateEntry(JournalEntry newEntry){
+        journalEntryRepository.save(newEntry);
+    }
 
     public List<JournalEntry> getAllEntry(){
         return journalEntryRepository.findAll();
