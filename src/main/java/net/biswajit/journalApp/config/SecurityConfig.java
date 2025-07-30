@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
+                .cors(Customizer.withDefaults())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

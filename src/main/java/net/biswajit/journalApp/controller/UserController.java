@@ -3,7 +3,6 @@ package net.biswajit.journalApp.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import net.biswajit.journalApp.dto.UpdateCredentialsDTO;
-import net.biswajit.journalApp.dto.UserDTO;
 import net.biswajit.journalApp.entity.JournalEntry;
 import net.biswajit.journalApp.entity.User;
 import net.biswajit.journalApp.api.response.WeatherResponse;
@@ -49,7 +48,7 @@ public class UserController {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String userName = authentication.getName();
 
-            User user = userRepository.findByUserName(userName);
+            User user = userRepository.findByUserName(userName).orElse(null);
 
             if(user != null){
                 return new ResponseEntity<>(user,HttpStatus.OK);
@@ -158,5 +157,14 @@ public class UserController {
         }
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<String> healthCheck() {
+        try {
+            return ResponseEntity.ok("Ok");
+        } catch (Exception e) {
+            log.error("User Not Verified: {}", e.getMessage(), e);
+            return new ResponseEntity<>("User Not Verified", HttpStatus.FORBIDDEN);
+        }
+    }
 
 }

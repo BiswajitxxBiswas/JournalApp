@@ -6,13 +6,15 @@ import net.biswajit.journalApp.dto.UserDTO;
 import net.biswajit.journalApp.entity.User;
 import net.biswajit.journalApp.model.EmailOtp;
 import net.biswajit.journalApp.repository.OtpVerificationRepository;
-import net.biswajit.journalApp.service.EmailService;
 import net.biswajit.journalApp.service.OtpVerificationService;
+import net.biswajit.journalApp.service.RedisService;
 import net.biswajit.journalApp.service.UserDetailsServiceImpl;
 import net.biswajit.journalApp.service.UserService;
 import net.biswajit.journalApp.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -50,6 +52,11 @@ public class PublicController {
 
     @Autowired
     private OtpVerificationRepository otpRepo;
+
+    @Autowired
+    private RedisService redisService;
+
+
     /**
      * Registers a new user.
      *
@@ -77,6 +84,8 @@ public class PublicController {
         }
     }
 
+
+
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestParam String email, @RequestParam String otp) {
         User user = userService.findByEmail(email);
@@ -94,12 +103,42 @@ public class PublicController {
         userService.saveUser(user);
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUserName());
-        String jwt = jwtUtil.generateToken(userDetails.getUsername());
 
-        return ResponseEntity.ok(Map.of(
-                "token", jwt,
-                "user", Map.of("userName", user.getUserName(), "email", user.getEmail())
-        ));
+        String accessToken = jwtUtil.generateToken(userDetails.getUsername());
+        String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
+
+        redisService.set(
+                "refresh_token:"+ refreshToken,
+                user.getId(),
+                7 * 24 * 60 * 60L
+        );
+
+        ResponseCookie accessCookie = ResponseCookie
+                .from("access_token", accessToken)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(2 * 60 * 60L)      // 2 hours in seconds
+                .sameSite("Lax")
+                .build();
+
+        ResponseCookie refreshCookie = ResponseCookie
+                .from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60L) // 7 days in seconds
+                .sameSite("Strict")
+                .build();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        headers.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+        return  ResponseEntity.ok()
+                .headers(headers)
+                .body(Map.of("user", user));
+
     }
 
     @PostMapping("/resend-otp")
@@ -130,10 +169,42 @@ public class PublicController {
             );
 
             User user = userService.findByUserName(userDTO.getUserName());
-
             UserDetails userDetails = userDetailsService.loadUserByUsername(userDTO.getUserName());
-            String jwt = jwtUtil.generateToken(userDetails.getUsername());
-            return  ResponseEntity.ok(Map.of("token",jwt,"user",user));
+
+            String accessToken = jwtUtil.generateToken(userDetails.getUsername());
+            String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
+
+            redisService.set(
+                    "refresh_token:"+ refreshToken,
+                    user.getId(),
+                    7 * 24 * 60 * 60L
+            );
+
+            ResponseCookie accessCookie = ResponseCookie
+                    .from("access_token", accessToken)
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .maxAge(5 * 60 * 60L)      // 5 hours in seconds
+                    .sameSite("Lax")
+                    .build();
+
+            ResponseCookie refreshCookie = ResponseCookie
+                    .from("refresh_token", refreshToken)
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .maxAge(7 * 24 * 60 * 60L) // 7 days in seconds
+                    .sameSite("Strict")
+                    .build();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
+            headers.add(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+            return  ResponseEntity.ok()
+                    .headers(headers)
+                    .body(Map.of("user", user));
 
         } catch (Exception e) {
             log.error("Exception occurred while creating JWT Token: {}", e.getMessage(), e);

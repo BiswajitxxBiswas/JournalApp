@@ -46,7 +46,7 @@ public class OtpVerificationController {
         }
 
 
-        User user = userRepo.findByEmail(email);
+        User user = userRepo.findByEmail(email).orElse(null);
         if(user != null){
             user.setMailVerify(true);
             userService.saveUser(user);

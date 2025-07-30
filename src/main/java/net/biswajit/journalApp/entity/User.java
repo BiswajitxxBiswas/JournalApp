@@ -30,6 +30,7 @@ public class User {
     @NonNull
     private String password;
 
+    @Indexed(unique = true)
     private String email;
     private LocalDate date;
 

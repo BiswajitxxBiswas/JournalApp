@@ -71,3 +71,5 @@ jwt:
 
 crypto:
   masterKey: ${CRYPTO_B64_KEY}
+
+frontendLink : ${FRONTEND_LINK}

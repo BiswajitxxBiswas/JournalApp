@@ -62,7 +62,7 @@ public class UserService {
 
     public User findByUserName(String username) {
         try {
-            return userRepository.findByUserName(username);
+            return userRepository.findByUserName(username).orElse(null);
         } catch (Exception e) {
             log.error("Error fetching user: ",e);
             return null;
@@ -70,7 +70,7 @@ public class UserService {
     }
     public User findByEmail(String email) {
         try {
-            User user = userRepository.findByEmail(email);
+            User user = userRepository.findByEmail(email).orElse(null);
             log.info("Uer in Service {}",user);
             return user;
         } catch (Exception e) {
