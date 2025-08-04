@@ -1,17 +1,22 @@
 package net.biswajit.journalApp.controller;
 
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import net.biswajit.journalApp.api.response.WeatherResponse;
 import net.biswajit.journalApp.dto.UpdateCredentialsDTO;
 import net.biswajit.journalApp.entity.JournalEntry;
 import net.biswajit.journalApp.entity.User;
-import net.biswajit.journalApp.api.response.WeatherResponse;
 import net.biswajit.journalApp.repository.JournalEntryRepository;
 import net.biswajit.journalApp.repository.UserRepository;
+import net.biswajit.journalApp.service.RedisService;
 import net.biswajit.journalApp.service.UserService;
 import net.biswajit.journalApp.service.WeatherService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -39,22 +44,25 @@ public class UserController {
     @Autowired
     private JournalEntryRepository journalEntryRepository;
 
+    @Autowired
+    private RedisService redisService;
+
     /*
-    * Get User Details
-    * */
+     * Get User Details
+     * */
     @GetMapping
-    public ResponseEntity<?> getUser(){
+    public ResponseEntity<?> getUser() {
 
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String userName = authentication.getName();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userName = authentication.getName();
 
-            User user = userRepository.findByUserName(userName).orElse(null);
+        User user = userRepository.findByUserName(userName).orElse(null);
 
-            if(user != null){
-                return new ResponseEntity<>(user,HttpStatus.OK);
-            }
+        if (user != null) {
+            return new ResponseEntity<>(user, HttpStatus.OK);
+        }
 
-            return new ResponseEntity<>("Error Fetching User",HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>("Error Fetching User", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     /**
@@ -62,16 +70,16 @@ public class UserController {
      */
     @Transactional
     @PutMapping("/update-user")
-    public ResponseEntity<?> updateUser(@RequestBody UpdateCredentialsDTO credentialsDTO) {
-        log.info("Credentials {}",credentialsDTO);
+    public ResponseEntity<?> updateUser(@RequestBody UpdateCredentialsDTO credentialsDTO, HttpServletRequest request) {
+        log.info("Credentials {}", credentialsDTO);
         try {
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String currentUsername = authentication.getName();
-            log.info("Current User {}",currentUsername);
+            log.info("Current User {}", currentUsername);
 
             User user = userService.findByUserName(currentUsername);
-            log.info("User in DB {}",user);
+            log.info("User in DB {}", user);
             if (user == null) {
                 return new ResponseEntity<>("User not found", HttpStatus.UNAUTHORIZED);
             }
@@ -94,10 +102,44 @@ public class UserController {
                 userService.saveUser(user);
             }
 
-            return ResponseEntity.ok("Credentials Updated");
+            String refreshToken = null;
+            if (request.getCookies() != null) {
+                for (Cookie cookie : request.getCookies()) {
+                    if ("refresh_token".equals(cookie.getName())) {
+                        refreshToken = cookie.getValue();
+                        break;
+                    }
+                }
+            }
+            if (refreshToken != null) {
+                redisService.delete("refresh_token:" + refreshToken);
+            }
 
-        }catch (Exception e){
-            return new ResponseEntity<>("Error Updating Credentials" + e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+            ResponseCookie accessClear = ResponseCookie.from("access_token", "")
+                    .httpOnly(true)
+                    .secure(true)
+                    .path("/")
+                    .maxAge(0)
+                    .sameSite("None")
+                    .build();
+
+            ResponseCookie refreshClear = ResponseCookie.from("refresh_token", "")
+                    .httpOnly(true)
+                    .secure(true)
+                    .path("/")
+                    .maxAge(0)
+                    .sameSite("None")
+                    .build();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.SET_COOKIE, accessClear.toString());
+            headers.add(HttpHeaders.SET_COOKIE, refreshClear.toString());
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body("Credentials Updated. Please log in again.");
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error Updating Credentials" + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
     }
@@ -108,7 +150,7 @@ public class UserController {
      */
     @Transactional
     @DeleteMapping
-    public ResponseEntity<?> deleteUser(){
+    public ResponseEntity<?> deleteUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userName = authentication.getName();
 
@@ -127,7 +169,7 @@ public class UserController {
             userRepository.deleteByUserName(userName);
 
             return new ResponseEntity<>("User and their Journal entries deleted Successfully ", HttpStatus.OK);
-        }catch (Exception e){
+        } catch (Exception e) {
             return new ResponseEntity<>("Error deleting user: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -137,7 +179,7 @@ public class UserController {
      * Example: /users/mumbai OR /users/new york
      */
     @GetMapping("/{city}")
-    public ResponseEntity<?> getWeatherDetails(@PathVariable String city){
+    public ResponseEntity<?> getWeatherDetails(@PathVariable String city) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userName = authentication.getName();
 
@@ -146,7 +188,7 @@ public class UserController {
 
             WeatherResponse resp = weatherService.getWeather(formattedCity);
 
-            String greet = (resp != null) ? " The weather in "+ formattedCity + " feels like " + resp.getCurrent().getFeelslike() : "";
+            String greet = (resp != null) ? " The weather in " + formattedCity + " feels like " + resp.getCurrent().getFeelslike() : "";
 
             return ResponseEntity.ok("Hi, " + userName + greet);
         } catch (IllegalArgumentException e) {

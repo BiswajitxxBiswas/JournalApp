@@ -1,6 +1,9 @@
 package net.biswajit.journalApp.controller;
 
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import net.biswajit.journalApp.dto.UserDTO;
 import net.biswajit.journalApp.entity.User;
@@ -116,19 +119,19 @@ public class PublicController {
         ResponseCookie accessCookie = ResponseCookie
                 .from("access_token", accessToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
-                .maxAge(2 * 60 * 60L)      // 2 hours in seconds
-                .sameSite("Lax")
+                .maxAge(24 * 60 * 60L)      // 24 hours in seconds
+                .sameSite("None")
                 .build();
 
         ResponseCookie refreshCookie = ResponseCookie
                 .from("refresh_token", refreshToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(7 * 24 * 60 * 60L) // 7 days in seconds
-                .sameSite("Strict")
+                .sameSite("None")
                 .build();
 
         HttpHeaders headers = new HttpHeaders();
@@ -183,19 +186,19 @@ public class PublicController {
             ResponseCookie accessCookie = ResponseCookie
                     .from("access_token", accessToken)
                     .httpOnly(true)
-                    .secure(false)
+                    .secure(true)
                     .path("/")
-                    .maxAge(5 * 60 * 60L)      // 5 hours in seconds
-                    .sameSite("Lax")
+                    .maxAge(24 * 60 * 60L)      // 24 hours in seconds
+                    .sameSite("None")
                     .build();
 
             ResponseCookie refreshCookie = ResponseCookie
                     .from("refresh_token", refreshToken)
                     .httpOnly(true)
-                    .secure(false)
+                    .secure(true)
                     .path("/")
                     .maxAge(7 * 24 * 60 * 60L) // 7 days in seconds
-                    .sameSite("Strict")
+                    .sameSite("None")
                     .build();
 
             HttpHeaders headers = new HttpHeaders();
@@ -211,6 +214,111 @@ public class PublicController {
             return new ResponseEntity<>("Incorrect Username or Password ", HttpStatus.BAD_REQUEST);
         }
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+        String refreshToken = null;
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refresh_token".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                    break;
+                }
+            }
+        }
+        redisService.delete("refresh_token:" + refreshToken);
+
+
+        ResponseCookie accessClear = ResponseCookie.from("access_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("None")
+                .build();
+
+        ResponseCookie refreshClear = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("None")
+                .build();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, accessClear.toString());
+        headers.add(HttpHeaders.SET_COOKIE, refreshClear.toString());
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(Map.of("message", "Logged out successfully"));
+    }
+
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshAccessToken(HttpServletRequest request) {
+        String refreshToken = null;
+
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refresh_token".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        if (refreshToken == null) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Missing refresh token"));
+        }
+
+
+        Object userIdObj = redisService.get("refresh_token:" + refreshToken, Object.class);
+        if (userIdObj == null) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid or expired refresh token"));
+        }
+
+        String username;
+        try {
+            username = jwtUtil.extractUserName(refreshToken);
+            if (username == null || !jwtUtil.validateRefreshToken(refreshToken)) {
+                throw new Exception("Invalid JWT");
+            }
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid refresh token"));
+        }
+
+        String newAccessToken = jwtUtil.generateToken(username);
+
+        ResponseCookie accessCookie = ResponseCookie
+                .from("access_token", newAccessToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("None")
+                .maxAge(5 * 60 * 60L)
+                .build();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, accessCookie.toString());
+
+        User user = userService.findByUserName(username);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(Map.of(
+                        "user", user,
+                        "refreshed", true
+                ));
+    }
+
+
 
 
     /**

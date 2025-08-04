@@ -35,4 +35,12 @@ public class RedisService {
             log.error("Exception ", e);
         }
     }
+
+    public void delete(String key) {
+        try {
+            redisTemplate.delete(key);
+        } catch (Exception e) {
+            log.error("Exception while deleting key from Redis: {}", key, e);
+        }
+    }
 }
